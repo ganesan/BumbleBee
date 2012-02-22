@@ -8,7 +8,13 @@ local physics = require("physics")
 local imagelookup = require("_imagelookup")
 local ui = require("ui")
 local game
+local appsperseAd
 
+local function queryAdListener( event )
+	if( event.hasAd ) then
+		print ("Ad filled")
+	end
+end
 
 function new ()
 	local super = require("_longlevel1")
@@ -28,6 +34,9 @@ function new ()
 	
 	game = require("GameMechanics")
 	game.configLevel(this.bee, this, -1800)
+	
+	appsperseAd = require("Appsperse")
+	appsperseAd.showPromotion(queryAdListener, nil, nil, nil)
 	
 	return this
 end
