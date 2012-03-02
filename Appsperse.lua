@@ -3,7 +3,7 @@ local native = require("native")
 local system = require("system")
 local network = require("network")
 local io = require("io")
-local app_key= "7062b075892d4b4e94102e2af6a28935"
+local app_key= "174b7a57d0a945a398a44eb9c550f404"
 local deviceID = system.getInfo( "deviceID" )
 local model = system.getInfo( "model" )
 local demo = "y"
@@ -30,13 +30,13 @@ end
 
 local function listener( event )
         local url = event.url
+		print(url)
 		if nil ~= string.find( url, "ad.html" ) then
 			return true
 		end
         if nil ~= string.find( url, "appsperse.com/api" ) then
 				customEvent = {hasAd=true, eventType="tapAd"}
 				queryListener(customEvent)
-                return false
         end
 		if nil ~= string.find( url, "appsperse.close" ) then
 				customEvent = {hasAd=true, eventType="closeAd"}
@@ -66,17 +66,18 @@ local function networkListener( event )
 				fh:flush()
 				io.close()
 				
-				xa = 30
-				ya = 30
-				ww = 420
-				wh = 260
+				xa = 0
+				ya = 0
+				ww = 480
+				wh = 320
 				if nil ~= string.find(system.orientation, "portrait") then
-					xa = 20
-					ya = 20
-					ww = 280
-					wh = 420
+					xa = 0
+					ya = 0
+					ww = 320
+					wh = 480
 				end
-				
+				print( display.viewableContentHeight )
+				print( display.viewableContentWidth )
 				native.showWebPopup( xa, ya, ww, wh, 
 				                  "ad.html", 
 				                  {urlRequest=listener, hasBackground=false, baseUrl=system.DocumentsDirectory} )

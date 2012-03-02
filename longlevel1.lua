@@ -16,6 +16,16 @@ local function queryAdListener( event )
 	end
 end
 
+local shakeListener = function( event )
+	print("shake")
+        if event.isShake then
+			appsperseAd = require("Appsperse")
+			appsperseAd.showPromotion(queryAdListener, nil, nil, nil)
+		end
+		
+end
+Runtime:addEventListener( "accelerometer", shakeListener )
+
 function new ()
 	local super = require("_longlevel1")
 	local this = super:newLongLevel1()
@@ -27,10 +37,6 @@ function new ()
 	this.coin2.points = 10
 	this.coin3.collisionCommand = "coin"
 	this.coin3.points = 10
-	
-	this.bubble.collisionCommand = "stop"
-	this.bubble.xOffset = 10
-	this.bubble.yOffset = 10
 	
 	game = require("GameMechanics")
 	game.configLevel(this.bee, this, -1800)
