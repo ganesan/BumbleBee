@@ -3,15 +3,16 @@ local native = require("native")
 local system = require("system")
 local network = require("network")
 local io = require("io")
-local app_key= "174b7a57d0a945a398a44eb9c550f404"
+local app_key= "577951021d0143c09d46696e5282e947"
 local deviceID = system.getInfo( "deviceID" )
 local model = system.getInfo( "model" )
-local demo = "y"
+local demo = "n"
 local o = "landscape"
-local baseURL = "http://dev.appsperse.com/api?"
-local receiptURL = "http://dev.appsperse.com/validatereceipt"
+local baseURL = "http://staging.appsperse.com/api?"
+local receiptURL = "http://staging.appsperse.com/validatereceipt"
 local queryListener
 local lastTransaction
+local webView
 
 local function purchaseNetworkListener( event )
 	
@@ -28,32 +29,50 @@ function productCallback( event )
 				lastTransaction = nil		
 end
 
+local function listener1( event )
+	native.setActivityIndicator( false )
+end
+
+local function listener2( event )
+	native.setActivityIndicator( false )
+end
+
 local function listener( event )
         local url = event.url
 		print(url)
-		if nil ~= string.find( url, "ad.html" ) then
-			return true
+		if event.errorCode then
+			native.setActivityIndicator( false )
+		        native.showAlert( "Error!", event.errorMessage, { "OK" } )
+				ustomEvent = {hasAd=true, eventType="closeAd"}
+				queryListener(customEvent)
+				webView:removeSelf()
+				webView = nil
+				return
 		end
         if nil ~= string.find( url, "appsperse.com/api" ) then
 				customEvent = {hasAd=true, eventType="tapAd"}
 				queryListener(customEvent)
+				system.openURL(url)
+				return
         end
 		if nil ~= string.find( url, "appsperse.close" ) then
 				customEvent = {hasAd=true, eventType="closeAd"}
 				queryListener(customEvent)
-                return false
+				webView:removeSelf()
+				webView = nil
+                return
         end
- 		system.openURL(url)
-        return false
+		transition.to( webView, { time=1000, alpha=1, delay=1000 ,onComplete=listener1, onStart=listener2 } )
 end
 
 local function networkListener( event )
         if ( event.isError ) then
                 print( "Network error!")
-        else
 				native.setActivityIndicator( false )
+        else
+				--native.setActivityIndicator( false )
 				local customEvent
-				if nil ~= string.find( event.response, "ERROR" ) then
+				if nil ~= string.find( event.response, "Error" ) then
 					customEvent = {hasAd=false, eventType="queryResponse"}
 					queryListener(customEvent)
 					return
@@ -78,9 +97,14 @@ local function networkListener( event )
 				end
 				print( display.viewableContentHeight )
 				print( display.viewableContentWidth )
-				native.showWebPopup( xa, ya, ww, wh, 
-				                  "ad.html", 
-				                  {urlRequest=listener, hasBackground=false, baseUrl=system.DocumentsDirectory} )
+				--native.showWebPopup( xa, ya, ww, wh, 
+				    --              "ad.html", 
+				       --           {urlRequest=listener, hasBackground=false, baseUrl=system.DocumentsDirectory} )
+					webView = native.newWebView( 0, 0, 480, 320 )
+					webView.hasBackground = false
+					webView.alpha = 0
+					webView:request( "ad.html", system.DocumentsDirectory )
+					webView:addEventListener( "urlRequest", listener )
         end
 end
 
@@ -95,7 +119,9 @@ function showPromotion(queryAdListener )
 	if nil ~= string.find(system.orientation, "portrait") then
 		o = "portrait"
 	end
-	network.request( "http://dev.appsperse.com/api?device_type="..model.."&device_mac="..deviceID.."&app_key="..app_key.."&promotion_type=interstitial&v=1.0b3&device_app_uuid="..deviceID.."&screen_orientation="..o.."&country=US&language=en&method=htmlpromotion&device_bundle_id=com.appsperse.Corona&demo_mode="..demo.."&device_id="..deviceID.."&", "GET", networkListener )
+	o = "landscape"
+	print ( deviceID )
+	network.request( baseURL.."device_type="..model.."&device_mac="..deviceID.."&app_key="..app_key.."&promotion_type=interstitial&v=1.0b3&device_app_uuid="..deviceID.."&screen_orientation="..o.."&country=US&language=en&method=htmlpromotion&device_bundle_id=com.appsperse.Corona&demo_mode="..demo.."&device_id="..deviceID.."&", "GET", networkListener )
 end
 
 function trackPurchase(transaction, productIdentifier)

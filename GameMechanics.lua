@@ -117,6 +117,7 @@ local function animate(event)
 			delta = 10
 		end
 		bee.y = 160 - 16*delta
+		--transition.to( bee, { time=10, y=(160 - 16*delta) })
 	end
 	if(state == 3) then
 		levelPassedLabel.alpha = 1
