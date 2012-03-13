@@ -39,32 +39,6 @@ local function startAdShowing( event )
 	queryListener(customEvent)
 end
 
-local function listener( event )
-        local url = event.url
-		local customEvent
-		if event.errorCode then
-				customEvent = {hasAd=false, eventType="adError"}
-				queryListener(customEvent)
-				webView:removeSelf()
-				webView = nil
-				return
-		end
-        if nil ~= string.find( url, "appsperse.com/api" ) then
-				customEvent = {hasAd=true, eventType="adTap"}
-				queryListener(customEvent)
-				system.openURL(url)
-				return
-        end
-		if nil ~= string.find( url, "appsperse.close" ) then
-				customEvent = {hasAd=true, eventType="adClose"}
-				queryListener(customEvent)
-				webView:removeSelf()
-				webView = nil
-                return
-        end
-		transition.to( webView, { time=1000, alpha=1, delay=1000 ,onComplete=adShown, onStart=startAdShowing } )
-end
-
 local function networkListener( event )
 	local customEvent = {hasAd=false, eventType="didReceiveResponse"}
 	queryListener(customEvent)
@@ -85,31 +59,11 @@ local function networkListener( event )
 		fh:write(event.response)
 		fh:flush()
 		io.close()
-
-		xa = 0
-		ya = 0
-		ww = 480
-		wh = 320
-		if nil ~= string.find(system.orientation, "portrait") then
-			xa = 0
-			ya = 0
-			ww = 320
-			wh = 480
-		end
-		webView = native.newWebView( 0, 0, 480, 320 )
-		webView.hasBackground = false
-		webView.alpha = 0
-		webView:request( "ad.html", system.DocumentsDirectory )
-		webView:addEventListener( "urlRequest", listener )
+		
 	end
 end
 
-function init(appKey, queryAdListner)
-	app_key = appKey
-	queryListener = queryAdListner
-end
-
-function show()
+local function getAdRemote()
 	o = "landscape"
 	if nil ~= string.find(system.orientation, "landscape") then
 		o = "landscape"
@@ -122,6 +76,62 @@ function show()
 	local customEvent = {hasAd=false, eventType="willRequestAd"}
 	queryListener(customEvent)
 	network.request( baseURL.."device_type="..model.."&device_mac="..deviceID.."&app_key="..app_key.."&promotion_type=interstitial&v=1.0b3&device_app_uuid="..deviceID.."&screen_orientation="..o.."&country=US&language=en&method=htmlpromotion&device_bundle_id=com.appsperse.Corona&demo_mode="..demo.."&device_id="..deviceID.."&", "GET", networkListener )
+end
+
+local function listener( event )
+        local url = event.url
+		local customEvent
+		if event.errorCode then
+				customEvent = {hasAd=false, eventType="adShowingError"}
+				queryListener(customEvent)
+				webView:removeSelf()
+				webView = nil
+				return
+		end
+        if nil ~= string.find( url, "appsperse.com/api" ) then
+				customEvent = {hasAd=true, eventType="adTap"}
+				queryListener(customEvent)
+				system.openURL(url)
+				return
+        end
+		if nil ~= string.find( url, "appsperse.close" ) then
+				customEvent = {hasAd=true, eventType="adClose"}
+				queryListener(customEvent)
+				webView:removeSelf()
+				webView = nil
+                return
+        end
+		transition.to( webView, { time=1000, alpha=1, delay=1000 ,onComplete=adShown, onStart=startAdShowing } )
+		getAdRemote()
+end
+
+function init(appKey, queryAdListner)
+	app_key = appKey
+	queryListener = queryAdListner
+	getAdRemote()
+end
+
+function show()
+	if webView ~= nil then
+		return
+	end
+		
+		xa = 0
+		ya = 0
+		ww = 480
+		wh = 320
+		if nil ~= string.find(system.orientation, "portrait") then
+			xa = 0
+			ya = 0
+			ww = 320
+			wh = 480
+		end
+		--webView = native.newWebView( 0, 0, 480, 320 )
+		webView = native.newWebView( xa, ya, ww, wh )
+		webView.hasBackground = false
+		webView.alpha = 0
+		webView:request( "ad.html", system.DocumentsDirectory )
+		webView:addEventListener( "urlRequest", listener )
 end
 
 function trackPurchase(transaction, productIdentifier)

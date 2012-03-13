@@ -238,6 +238,7 @@ function configLevel(levelBee , levelMoveGroup, levelEndX)
 	score.setScore(0)
 	
 	setupLives()
+	
 	Runtime:addEventListener( "collision", onGlobalCollision);
 
 	Runtime:addEventListener( "enterFrame", animate );
