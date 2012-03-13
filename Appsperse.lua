@@ -43,8 +43,7 @@ local function listener( event )
         local url = event.url
 		local customEvent
 		if event.errorCode then
-		        native.showAlert( "Error!", event.errorMessage, { "OK" } )
-				ucstomEvent = {hasAd=false, eventType="error"}
+				customEvent = {hasAd=false, eventType="adError"}
 				queryListener(customEvent)
 				webView:removeSelf()
 				webView = nil
@@ -67,17 +66,19 @@ local function listener( event )
 end
 
 local function networkListener( event )
+	local customEvent = {hasAd=false, eventType="didReceiveResponse"}
+	queryListener(customEvent)
 	if ( event.isError ) then
-		customEvent = {hasAd=false, eventType="queryResponse"}
+		customEvent = {hasAd=false, eventType="responseError"}
 		queryListener(customEvent)
 	else
 		local customEvent
 		if nil ~= string.find( event.response, "Error" ) then
-			customEvent = {hasAd=false, eventType="queryResponse"}
+			customEvent = {hasAd=false, eventType="responseError"}
 			queryListener(customEvent)
 			return
 		end
-		customEvent = {hasAd=true, eventType="queryResponse"}
+		customEvent = {hasAd=true, eventType="adServed"}
 		queryListener(customEvent)
 		local path = system.pathForFile( "ad.html", system.DocumentsDirectory )
 		fh = io.open( path, "w" )
@@ -118,6 +119,8 @@ function show()
 	end
 	print(system.orientation)
 	--o = "landscape"
+	local customEvent = {hasAd=false, eventType="willRequestAd"}
+	queryListener(customEvent)
 	network.request( baseURL.."device_type="..model.."&device_mac="..deviceID.."&app_key="..app_key.."&promotion_type=interstitial&v=1.0b3&device_app_uuid="..deviceID.."&screen_orientation="..o.."&country=US&language=en&method=htmlpromotion&device_bundle_id=com.appsperse.Corona&demo_mode="..demo.."&device_id="..deviceID.."&", "GET", networkListener )
 end
 
