@@ -40,7 +40,7 @@ local function queryAdListener( event )
 		print ("The user tapped the ad")
 	end
 	if nil ~= string.find( event.response, "adClose" ) then
-		nprint ("The user closed the ad")
+		print ("The user closed the ad")
 	end
 end
 
