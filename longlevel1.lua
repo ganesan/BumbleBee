@@ -9,6 +9,7 @@ local imagelookup = require("_imagelookup")
 local ui = require("ui")
 local game
 local appsperseAd
+local native = require("native")
 
 local function queryAdListener( event )
 	if( event.hasAd ) then
@@ -42,7 +43,8 @@ function new ()
 	game.configLevel(this.bee, this, -1800)
 	
 	appsperseAd = require("Appsperse")
-	appsperseAd.showPromotion(queryAdListener, nil, nil, nil)
+	appsperseAd.init("577951021d0143c09d46696e5282e947", queryAdListener)
+	appsperseAd.show(queryAdListener)
 	
 	return this
 end

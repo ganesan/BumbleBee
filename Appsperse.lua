@@ -29,89 +29,86 @@ function productCallback( event )
 				lastTransaction = nil		
 end
 
-local function listener1( event )
-	native.setActivityIndicator( false )
+local function adShown( event )
+	local customEvent = {hasAd=true, eventType="adShowing"}
+	queryListener(customEvent)
 end
 
-local function listener2( event )
-	native.setActivityIndicator( false )
+local function startAdShowing( event )
+	local customEvent = {hasAd=true, eventType="adStartShowing"}
+	queryListener(customEvent)
 end
 
 local function listener( event )
         local url = event.url
-		print(url)
+		local customEvent
 		if event.errorCode then
-			native.setActivityIndicator( false )
 		        native.showAlert( "Error!", event.errorMessage, { "OK" } )
-				ustomEvent = {hasAd=true, eventType="closeAd"}
+				ucstomEvent = {hasAd=false, eventType="error"}
 				queryListener(customEvent)
 				webView:removeSelf()
 				webView = nil
 				return
 		end
         if nil ~= string.find( url, "appsperse.com/api" ) then
-				customEvent = {hasAd=true, eventType="tapAd"}
+				customEvent = {hasAd=true, eventType="adTap"}
 				queryListener(customEvent)
 				system.openURL(url)
 				return
         end
 		if nil ~= string.find( url, "appsperse.close" ) then
-				customEvent = {hasAd=true, eventType="closeAd"}
+				customEvent = {hasAd=true, eventType="adClose"}
 				queryListener(customEvent)
 				webView:removeSelf()
 				webView = nil
                 return
         end
-		transition.to( webView, { time=1000, alpha=1, delay=1000 ,onComplete=listener1, onStart=listener2 } )
+		transition.to( webView, { time=1000, alpha=1, delay=1000 ,onComplete=adShown, onStart=startAdShowing } )
 end
 
 local function networkListener( event )
-        if ( event.isError ) then
-                print( "Network error!")
-				native.setActivityIndicator( false )
-        else
-				--native.setActivityIndicator( false )
-				local customEvent
-				if nil ~= string.find( event.response, "Error" ) then
-					customEvent = {hasAd=false, eventType="queryResponse"}
-					queryListener(customEvent)
-					return
-				end
-				customEvent = {hasAd=true, eventType="queryResponse"}
-				queryListener(customEvent)
-				local path = system.pathForFile( "ad.html", system.DocumentsDirectory )
-				fh = io.open( path, "w" )
-				fh:write(event.response)
-				fh:flush()
-				io.close()
-				
-				xa = 0
-				ya = 0
-				ww = 480
-				wh = 320
-				if nil ~= string.find(system.orientation, "portrait") then
-					xa = 0
-					ya = 0
-					ww = 320
-					wh = 480
-				end
-				print( display.viewableContentHeight )
-				print( display.viewableContentWidth )
-				--native.showWebPopup( xa, ya, ww, wh, 
-				    --              "ad.html", 
-				       --           {urlRequest=listener, hasBackground=false, baseUrl=system.DocumentsDirectory} )
-					webView = native.newWebView( 0, 0, 480, 320 )
-					webView.hasBackground = false
-					webView.alpha = 0
-					webView:request( "ad.html", system.DocumentsDirectory )
-					webView:addEventListener( "urlRequest", listener )
-        end
+	if ( event.isError ) then
+		customEvent = {hasAd=false, eventType="queryResponse"}
+		queryListener(customEvent)
+	else
+		local customEvent
+		if nil ~= string.find( event.response, "Error" ) then
+			customEvent = {hasAd=false, eventType="queryResponse"}
+			queryListener(customEvent)
+			return
+		end
+		customEvent = {hasAd=true, eventType="queryResponse"}
+		queryListener(customEvent)
+		local path = system.pathForFile( "ad.html", system.DocumentsDirectory )
+		fh = io.open( path, "w" )
+		fh:write(event.response)
+		fh:flush()
+		io.close()
+
+		xa = 0
+		ya = 0
+		ww = 480
+		wh = 320
+		if nil ~= string.find(system.orientation, "portrait") then
+			xa = 0
+			ya = 0
+			ww = 320
+			wh = 480
+		end
+		webView = native.newWebView( 0, 0, 480, 320 )
+		webView.hasBackground = false
+		webView.alpha = 0
+		webView:request( "ad.html", system.DocumentsDirectory )
+		webView:addEventListener( "urlRequest", listener )
+	end
 end
 
-function showPromotion(queryAdListener )
-	queryListener = queryAdListener
-	
-	native.setActivityIndicator( true )
+function init(appKey, queryAdListner)
+	app_key = appKey
+	queryListener = queryAdListner
+end
+
+function show()
 	o = "landscape"
 	if nil ~= string.find(system.orientation, "landscape") then
 		o = "landscape"
@@ -119,8 +116,8 @@ function showPromotion(queryAdListener )
 	if nil ~= string.find(system.orientation, "portrait") then
 		o = "portrait"
 	end
-	o = "landscape"
-	print ( deviceID )
+	print(system.orientation)
+	--o = "landscape"
 	network.request( baseURL.."device_type="..model.."&device_mac="..deviceID.."&app_key="..app_key.."&promotion_type=interstitial&v=1.0b3&device_app_uuid="..deviceID.."&screen_orientation="..o.."&country=US&language=en&method=htmlpromotion&device_bundle_id=com.appsperse.Corona&demo_mode="..demo.."&device_id="..deviceID.."&", "GET", networkListener )
 end
 
