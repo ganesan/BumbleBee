@@ -8,8 +8,8 @@ local deviceID = system.getInfo( "deviceID" )
 local model = system.getInfo( "model" )
 local demo = "n"
 local o = "landscape"
-local baseURL = "http://staging.appsperse.com/api?"
-local receiptURL = "http://staging.appsperse.com/receipt"
+local baseURL = "http://api.appsperse.com/api?"
+local receiptURL = "http://api.appsperse.com/receipt"
 local queryListener
 local webView
 
