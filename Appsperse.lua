@@ -9,24 +9,12 @@ local model = system.getInfo( "model" )
 local demo = "n"
 local o = "landscape"
 local baseURL = "http://staging.appsperse.com/api?"
-local receiptURL = "http://staging.appsperse.com/validatereceipt"
+local receiptURL = "http://staging.appsperse.com/receipt"
 local queryListener
-local lastTransaction
 local webView
 
 local function purchaseNetworkListener( event )
 	
-end
-
-function productCallback( event )
-				price = event.products[0].price
-				priceLocale = event.products[0].localizedPrice
-				transactionID = lastTransaction.identifier
-				network.request( baseURL.."price="..price.."&price_locale="..priceLocale.."&transaction_id="..transactionID.."&device_type="..model.."&device_mac="..deviceID.."&app_key="..app_key.."&v=1.0b3&device_app_uuid="..deviceID.."&screen_orientation="..o.."&country=US&language=en&method=purchase&device_bundle_id=com.appsperse.Corona&demo_mode="..demo.."&device_id="..deviceID.."&", "GET", purchaseNetworkListener )
-				local params = {}
-				params.body = lastTransaction.receipt
-				network.request( receiptURL, "POST", purchaseNetworkListener, params)
-				lastTransaction = nil		
 end
 
 local function adShown( event )
@@ -134,7 +122,12 @@ function show()
 		webView:addEventListener( "urlRequest", listener )
 end
 
-function trackPurchase(transaction, productIdentifier)
-	lastTransaction = transaction
-	store.loadProducts( {productIdentifier}, productCallback )	
+function trackPurchase(transaction, product)
+		local price = product.price
+		local priceLocale = product.localizedPrice
+		transactionID = transaction.identifier
+		network.request( baseURL.."price="..price.."&price_locale="..priceLocale.."&transaction_id="..transactionID.."&device_type="..model.."&device_mac="..deviceID.."&app_key="..app_key.."&v=1.0b3&device_app_uuid="..deviceID.."&screen_orientation="..o.."&country=US&language=en&method=purchase&device_bundle_id=com.appsperse.Corona&demo_mode="..demo.."&device_id="..deviceID.."&", "GET", purchaseNetworkListener )
+		local params = {}
+		params.body = transaction.receipt
+		network.request( receiptURL, "POST", purchaseNetworkListener, params)
 end

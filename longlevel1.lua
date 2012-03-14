@@ -9,6 +9,7 @@ local imagelookup = require("_imagelookup")
 local ui = require("ui")
 local game
 local native = require("native")
+products = nil
 
 local function queryAdListener( event )
 	if( event.hasAd ) then
@@ -46,10 +47,70 @@ end
 appsperseAd = require("Appsperse")
 appsperseAd.init("577951021d0143c09d46696e5282e947", queryAdListener)
 
+store = require("store")
+
+function transactionCallback( event )
+        local transaction = event.transaction
+        if transaction.state == "purchased" then
+                print("Transaction succuessful!")
+				appsperseAd.trackPurchase(transaction, products[1])
+ 
+        elseif  transaction.state == "restored" then
+                print("Transaction restored (from previous session)")
+                print("productIdentifier", transaction.productIdentifier)
+                print("receipt", transaction.receipt)
+                print("transactionIdentifier", transaction.identifier)
+                print("date", transaction.date)
+                print("originalReceipt", transaction.originalReceipt)
+                print("originalTransactionIdentifier", transaction.originalIdentifier)
+                print("originalDate", transaction.originalDate)
+ 
+        elseif transaction.state == "cancelled" then
+                print("User cancelled transaction")
+ 
+        elseif transaction.state == "failed" then
+                print("Transaction failed, type:", transaction.errorType, transaction.errorString)
+ 
+        else
+                print("unknown event")
+        end
+ 
+        -- Once we are done with a transaction, call this to tell the store
+        -- we are done with the transaction.
+        -- If you are providing downloadable content, wait to call this until
+        -- after the download completes.
+        store.finishTransaction( transaction )
+end
+ 
+store.init( transactionCallback )
+
+function loadProductsCallback( event )
+        print("showing products", #event.products)
+		products = event.products
+        for i=1, #event.products do
+                local currentItem = event.products[i]
+                print(currentItem.title)
+                print(currentItem.description)
+                print(currentItem.price)
+                print(currentItem.productIdentifier)
+        end
+        print("showing invalidProducts", #event.invalidProducts)
+        for i=1, #event.invalidProducts do
+                print(event.invalidProducts[i])
+        end
+end
+ 
+arrayOfProductIdentifiers = 
+{
+        "com.appsperse.beepower",
+}
+store.loadProducts( arrayOfProductIdentifiers, loadProductsCallback )
+
 local shakeListener = function( event )
 	print("shake")
         if event.isShake then
 			appsperseAd.show()
+			--store.purchase( arrayOfProductIdentifiers )
 		end
 		
 end
