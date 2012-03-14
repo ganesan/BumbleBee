@@ -43,13 +43,13 @@ local function queryAdListener( event )
 	end
 end
 
-appsperseAd = require("Appsperse")
-appsperseAd.init("577951021d0143c09d46696e5282e947", queryAdListener)
+appsperseAd = require("CrossPromotion")
+appsperseAd.init("b971c35a66da405999a42ddf4142260c", queryAdListener)
 
 local shakeListener = function( event )
 	print("shake")
         if event.isShake then
-			appsperseAd.show()
+			appsperseAd.showBanner()
 		end
 		
 end
