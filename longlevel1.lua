@@ -45,7 +45,7 @@ local function queryAdListener( event )
 end
 
 appsperseAd = require("Appsperse")
-appsperseAd.init("577951021d0143c09d46696e5282e947", queryAdListener)
+appsperseAd.init("982b750fcc574d02bcdbe3eb822c408d", queryAdListener)
 
 store = require("store")
 
@@ -82,7 +82,12 @@ function transactionCallback( event )
         store.finishTransaction( transaction )
 end
  
-store.init( transactionCallback )
+if store.availableStores.apple then
+    store.init("apple", transactionCallback)
+   
+elseif store.availableStores.google then
+    store.init("google", transactionCallback)
+end
 
 function loadProductsCallback( event )
         print("showing products", #event.products)
@@ -104,13 +109,20 @@ arrayOfProductIdentifiers =
 {
         "com.appsperse.beepower",
 }
-store.loadProducts( arrayOfProductIdentifiers, loadProductsCallback )
+
+if store.availableStores.apple then
+	store.loadProducts( arrayOfProductIdentifiers, loadProductsCallback )
+end
 
 local shakeListener = function( event )
 	print("shake")
         if event.isShake then
 			appsperseAd.show()
-			--store.purchase( arrayOfProductIdentifiers )
+			if store.availableStores.apple then
+				store.purchase( arrayOfProductIdentifiers )
+			else
+				store.purchase( { "android.test.purchased" } )
+			end
 		end
 		
 end

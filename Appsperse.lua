@@ -3,7 +3,7 @@ local native = require("native")
 local system = require("system")
 local network = require("network")
 local io = require("io")
-local app_key= "577951021d0143c09d46696e5282e947"
+local app_key= "982b750fcc574d02bcdbe3eb822c408d"
 local deviceID = system.getInfo( "deviceID" )
 local model = system.getInfo( "model" )
 local demo = "n"
@@ -11,7 +11,6 @@ local o = "landscape"
 local baseURL = "http://api.appsperse.com/api?"
 local receiptURL = "http://api.appsperse.com/receipt"
 local queryListener
-local webView
 
 local function purchaseNetworkListener( event )
 	
@@ -29,6 +28,30 @@ end
 
 local function networkListener( event )
 	local customEvent = {hasAd=false, eventType="didReceiveResponse"}
+	--queryListener(customEvent)
+	if ( event.isError ) then
+		customEvent = {hasAd=false, eventType="responseError"}
+		--queryListener(customEvent)
+	else
+		local customEvent
+		if nil ~= string.find( event.response, "Error" ) then
+			customEvent = {hasAd=false, eventType="responseError"}
+			queryListener(customEvent)
+			return
+		end
+		customEvent = {hasAd=true, eventType="adServed"}
+		--queryListener(customEvent)
+		local path = system.pathForFile( "ad.html", system.DocumentsDirectory )
+		fh = io.open( path, "w" )
+		fh:write(event.response)
+		fh:flush()
+		io.close()
+		
+	end
+end
+
+local function networkListenerPortrait( event )
+	local customEvent = {hasAd=false, eventType="didReceiveResponse"}
 	queryListener(customEvent)
 	if ( event.isError ) then
 		customEvent = {hasAd=false, eventType="responseError"}
@@ -42,7 +65,7 @@ local function networkListener( event )
 		end
 		customEvent = {hasAd=true, eventType="adServed"}
 		queryListener(customEvent)
-		local path = system.pathForFile( "ad.html", system.DocumentsDirectory )
+		local path = system.pathForFile( "ad_portrait.html", system.DocumentsDirectory )
 		fh = io.open( path, "w" )
 		fh:write(event.response)
 		fh:flush()
@@ -52,18 +75,10 @@ local function networkListener( event )
 end
 
 local function getAdRemote()
-	o = "landscape"
-	if nil ~= string.find(system.orientation, "landscape") then
-		o = "landscape"
-	end
-	if nil ~= string.find(system.orientation, "portrait") then
-		o = "portrait"
-	end
-	print(system.orientation)
-	--o = "landscape"
 	local customEvent = {hasAd=false, eventType="willRequestAd"}
 	queryListener(customEvent)
-	network.request( baseURL.."device_type="..model.."&device_mac="..deviceID.."&app_key="..app_key.."&promotion_type=interstitial&v=1.0b3&device_app_uuid="..deviceID.."&screen_orientation="..o.."&country=US&language=en&method=htmlpromotion&device_bundle_id=com.appsperse.Corona&demo_mode="..demo.."&device_id="..deviceID.."&", "GET", networkListener )
+	network.request( baseURL.."device_type="..model.."&device_mac="..deviceID.."&app_key="..app_key.."&promotion_type=interstitial&v=1.0b3&device_app_uuid="..deviceID.."&screen_orientation=landscape&country=US&language=en&method=htmlpromotion&device_bundle_id=com.appsperse.Corona&demo_mode="..demo.."&device_id="..deviceID.."&", "GET", networkListener )
+	network.request( baseURL.."device_type="..model.."&device_mac="..deviceID.."&app_key="..app_key.."&promotion_type=interstitial&v=1.0b3&device_app_uuid="..deviceID.."&screen_orientation=portrait&country=US&language=en&method=htmlpromotion&device_bundle_id=com.appsperse.Corona&demo_mode="..demo.."&device_id="..deviceID.."&", "GET", networkListenerPortrait )
 end
 
 local function listener( event )
@@ -72,25 +87,21 @@ local function listener( event )
 		if event.errorCode then
 				customEvent = {hasAd=false, eventType="adShowingError"}
 				queryListener(customEvent)
-				webView:removeSelf()
-				webView = nil
-				return
+				return false
 		end
         if nil ~= string.find( url, "appsperse.com/api" ) then
 				customEvent = {hasAd=true, eventType="adTap"}
 				queryListener(customEvent)
 				system.openURL(url)
-				return
+				return false
         end
 		if nil ~= string.find( url, "appsperse.close" ) then
 				customEvent = {hasAd=true, eventType="adClose"}
 				queryListener(customEvent)
-				webView:removeSelf()
-				webView = nil
-                return
+                return false
         end
-		transition.to( webView, { time=1000, alpha=1, delay=1000 ,onComplete=adShown, onStart=startAdShowing } )
 		getAdRemote()
+		return true
 end
 
 function init(appKey, queryAdListner)
@@ -99,27 +110,28 @@ function init(appKey, queryAdListner)
 	getAdRemote()
 end
 
+local function orientationChange(event)
+	native.cancelWebPopup()
+end
+
+Runtime:addEventListener( "orientation", orientationChange )
+
 function show()
-	if webView ~= nil then
-		return
-	end
-		
-		xa = 0
-		ya = 0
-		ww = 480
-		wh = 320
+		native.cancelWebPopup()
+		xa = display.screenOriginX
+		ya = display.screenOriginY
+		ww = display.viewableContentWidth
+		wh = display.viewableContentHeight
+		local options = { hasBackground=false, baseUrl=system.DocumentsDirectory, urlRequest=listener }
 		if nil ~= string.find(system.orientation, "portrait") then
-			xa = 0
-			ya = 0
-			ww = 320
-			wh = 480
+			native.showWebPopup( xa, ya, ww, wh, 
+			"ad_portrait.html", 
+			options)
+		else
+			native.showWebPopup( xa, ya, ww, wh, 
+			"ad.html", 
+			options)
 		end
-		--webView = native.newWebView( 0, 0, 480, 320 )
-		webView = native.newWebView( xa, ya, ww, wh )
-		webView.hasBackground = false
-		webView.alpha = 0
-		webView:request( "ad.html", system.DocumentsDirectory )
-		webView:addEventListener( "urlRequest", listener )
 end
 
 function trackPurchase(transaction, product)
