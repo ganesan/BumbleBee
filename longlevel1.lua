@@ -45,7 +45,7 @@ local function queryAdListener( event )
 end
 
 appsperseAd = require("Appsperse")
-appsperseAd.init("982b750fcc574d02bcdbe3eb822c408d", queryAdListener)
+appsperseAd.init("69d94d4b7f114cae83b2fa1163b607d2", queryAdListener)
 
 store = require("store")
 
